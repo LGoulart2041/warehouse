@@ -28,7 +28,8 @@ public class ProductController {
         entity = service.save(entity);
         return mapper.toSavedResponse(entity);
     }
-    @PostMapping("{id}/purchase")
+
+    @PostMapping("{id}/purchased")
     @ResponseStatus(NO_CONTENT)
     void purchase(@PathVariable final UUID id) {
         service.purchase(id);

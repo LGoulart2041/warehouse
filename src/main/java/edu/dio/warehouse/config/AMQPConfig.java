@@ -1,6 +1,7 @@
 package edu.dio.warehouse.config;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -71,7 +72,19 @@ public class AMQPConfig {
     // 👇 AQUI entra o listener
     @Bean
     public ApplicationListener<ApplicationReadyEvent> applicationReadyEventListener(RabbitAdmin rabbitAdmin) {
-        return event -> rabbitAdmin.initialize();
+        return event -> {
+            int attempts = 0;
+            while (attempts < 10) {
+                try {
+                    rabbitAdmin.initialize();
+                    return;
+                } catch (AmqpConnectException ex) {
+                    attempts++;
+                    try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                }
+            }
+            throw new IllegalStateException("Could not initialize RabbitAdmin after retries");
+        };
     }
 
     // Apenas para debug

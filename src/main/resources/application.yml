@@ -35,6 +35,5 @@ spring:
       product-change-availability: product.change.availability.exchange
     routing-key:
       product-change-availability: product.change.availability.routing.key
-
 storefront:
   base-path: http://storefrontapp:8081/storefront

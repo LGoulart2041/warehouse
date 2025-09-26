@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-public class StorefrontClientConfig {
+public class WarehouseClientConfig {
 
     @Bean
-    RestClient storefrontClient(@Value("${storefront.base-path") final String basePath){
-        return RestClient.create(basePath);
+    RestClient warehouseClient(@Value("${storefront.base-path}") final String basePath){
+        return RestClient.builder().baseUrl(basePath).build();
     }
 }
