@@ -21,12 +21,14 @@ import static edu.dio.warehouse.entity.StockStatus.UNAVAILABLE;
 public class StockServiceImpl implements IStockService {
 
     private final StockRepository repository;
-    private final IProductService productService;
+    private final ProductRepository productRepository;
     private final IProductChangeAvailabilityProducer producer;
 
     @Override
     public StockEntity save(StockEntity entity) {
-        entity.setProduct(productService.findById(entity.getProduct().getId()));
+        var product = productRepository.findById(entity.getProduct().getId())
+                        .orElseThrow();
+        entity.setProduct(product);
         return repository.save(entity);
     }
 

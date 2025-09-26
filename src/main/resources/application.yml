@@ -22,6 +22,8 @@ spring:
         trace: false
         web-allow-others: true
   rabbitmq:
+    template:
+      message-converter: jackson2JsonMessageConverter
     host: rabbitmq
     port: 5672
     username: admin

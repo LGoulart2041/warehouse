@@ -1,4 +1,25 @@
+version: '3.9'
+
 services:
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"       # AMQP
+      - "15672:15672"     # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   warehouseapp:
     build:
       context: .
@@ -13,23 +34,13 @@ services:
     networks:
       - ecommerce-net
     depends_on:
-      - rabbitmq
-  rabbitmq:
-    image: rabbitmq:4.0.5
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    command: >
-      sh -c "rabbitmq-plugins enable rabbitmq_management &&
-            rabbitmq-server"
-    networks:
-      - ecommerce-net
+      rabbitmq:
+        condition: service_healthy
+
 networks:
   ecommerce-net:
     name: ecommerce-net
     external: true
+
 volumes:
-  db:
+  rabbitmq-data:

@@ -1,44 +1,85 @@
 package edu.dio.warehouse.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class AMQPConfig {
 
-    @Bean
-    Jackson2JsonMessageConverter jsonMessageConverter() {return new Jackson2JsonMessageConverter();}
+    @Value("${spring.rabbitmq.queue.product-change-availability}")
+    private String queueName;
 
+    @Value("${spring.rabbitmq.exchange.product-change-availability}")
+    private String exchangeName;
+
+    @Value("${spring.rabbitmq.routing-key.product-change-availability}")
+    private String routingKey;
+
+    // Conversor JSON
     @Bean
-    RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory,
-                                  final Jackson2JsonMessageConverter converter) {
-        var rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(converter);
-        return rabbitTemplate;
+    public Jackson2JsonMessageConverter jsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
     }
 
+    // RabbitTemplate com conversor
     @Bean
-    Queue queue(@Value("${spring.rabbitmq.queue.product-change-availability}") final String name){
-        return new Queue(name, true);
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory,
+                                         Jackson2JsonMessageConverter converter) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(converter);
+        return template;
     }
 
+    // Fila
     @Bean
-    DirectExchange exchange(@Value("${spring.rabbitmq.exchange.product-change-availability}") final String name){
-        return new DirectExchange(name);
+    public Queue queue() {
+        return new Queue(queueName, true);
     }
 
+    // Exchange
     @Bean
-    Binding binding(final Queue queue,
-                    final DirectExchange exchange,
-                    @Value("${spring.rabbitmq.routing-key.product-change-availability}") final String name){
-        return BindingBuilder.bind(queue).to(exchange).with(name);
+    public DirectExchange exchange() {
+        return new DirectExchange(exchangeName);
+    }
+
+    // Binding
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(routingKey);
+    }
+
+    // RabbitAdmin para criação automática
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+        admin.setAutoStartup(true); // crucial para criar filas automaticamente
+        return admin;
+    }
+
+    // 👇 AQUI entra o listener
+    @Bean
+    public ApplicationListener<ApplicationReadyEvent> applicationReadyEventListener(RabbitAdmin rabbitAdmin) {
+        return event -> rabbitAdmin.initialize();
+    }
+
+    // Apenas para debug
+    @PostConstruct
+    public void init() {
+        System.out.println("AMQPConfig initialized:");
+        System.out.println("  Queue: " + queueName);
+        System.out.println("  Exchange: " + exchangeName);
+        System.out.println("  Routing Key: " + routingKey);
     }
 }
