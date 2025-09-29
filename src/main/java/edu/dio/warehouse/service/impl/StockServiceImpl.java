@@ -3,10 +3,9 @@ package edu.dio.warehouse.service.impl;
 import edu.dio.warehouse.dto.StockStatusMessage;
 import edu.dio.warehouse.entity.StockEntity;
 import edu.dio.warehouse.entity.StockStatus;
-import edu.dio.warehouse.repository.ProductRepository;
 import edu.dio.warehouse.repository.StockRepository;
 import edu.dio.warehouse.service.IProductChangeAvailabilityProducer;
-import edu.dio.warehouse.service.IProductService;
+import edu.dio.warehouse.service.IProductQueryService;
 import edu.dio.warehouse.service.IStockService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,14 +20,12 @@ import static edu.dio.warehouse.entity.StockStatus.UNAVAILABLE;
 public class StockServiceImpl implements IStockService {
 
     private final StockRepository repository;
-    private final ProductRepository productRepository;
+    private final IProductQueryService productQueryService;
     private final IProductChangeAvailabilityProducer producer;
 
     @Override
     public StockEntity save(StockEntity entity) {
-        var product = productRepository.findById(entity.getProduct().getId())
-                        .orElseThrow();
-        entity.setProduct(product);
+        entity.setProduct(productQueryService.findById(entity.getProduct().getId()));
         return repository.save(entity);
     }
 

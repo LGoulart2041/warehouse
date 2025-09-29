@@ -5,6 +5,7 @@ import edu.dio.warehouse.dto.ProductStorefrontSavedDTO;
 import edu.dio.warehouse.entity.ProductEntity;
 import edu.dio.warehouse.mapper.IProductMapper;
 import edu.dio.warehouse.repository.ProductRepository;
+import edu.dio.warehouse.service.IProductQueryService;
 import edu.dio.warehouse.service.IProductService;
 import edu.dio.warehouse.service.IStockService;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class ProductServiceImpl implements IProductService {
 
     private final ProductRepository repository;
+    private final IProductQueryService productService;
     private final IStockService stockService;
     private final RestClient storefrontClient;
     private final IProductMapper mapper;
@@ -32,17 +34,12 @@ public class ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public ProductEntity findById(UUID id) {
-        return repository.findById(id).orElseThrow();
-    }
-
-    @Override
     public void purchase(UUID id) {
-        var entity = findById(id);
+        var entity = productService.findById(id);
         var stock = entity.decStock();
         repository.save(entity);
         if(stock.isUnavailable()){
-            stockService.changeStatus(entity.getId(), stock.getStatus());
+            stockService.changeStatus(stock.getId(), stock.getStatus());
         }
     }
 
